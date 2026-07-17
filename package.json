@@ -1,0 +1,29 @@
+{
+  "name": "live777-player",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Standalone Live777 video player with WebRTC/WHEP and RTSP support",
+  "scripts": {
+    "dev": "vite -c vite.config.ts",
+    "build": "vite build -c vite.config.ts",
+    "preview": "vite preview -c vite.config.ts"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "whip-whep": "1.2.0",
+    "zustand": "^5.0.6"
+  },
+  "devDependencies": {
+    "@iconify-json/logos": "^1.2.3",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@unocss/preset-attributify": "^0.64.1",
+    "@unocss/preset-icons": "^0.64.1",
+    "@unocss/preset-uno": "^0.64.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "typescript": "^5.6.3",
+    "unocss": "^0.64.1",
+    "vite": "^5.4.11"
+  }
+}
