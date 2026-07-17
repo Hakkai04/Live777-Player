@@ -122,7 +122,7 @@ export function PlayerControls({
             </div>
 
             {/* Volume percentage */}
-            <span className="text-white/70 text-xs w-8 text-right select-none">
+            <span className="text-white/80 text-xs w-8 text-right select-none font-medium">
               {isMuted ? 'M' : `${volume}`}
             </span>
           </div>

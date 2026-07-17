@@ -10,6 +10,7 @@ export default defineConfig({
   root: PlayerRoot,
   publicDir: path.resolve(PlayerRoot, 'public'),
   server: {
+    host: '0.0.0.0',
     port: 3000,
     proxy: {
       '^/whip/.*': 'http://localhost:7777',

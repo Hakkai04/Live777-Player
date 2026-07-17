@@ -65,8 +65,8 @@ export function UrlInput({ onConnect, disabled = false }: UrlInputProps) {
         <select
           value={protocol}
           onChange={e => setProtocol(e.target.value as StreamProtocol)}
-          className="px-3 py-2.5 bg-gray-900/80 border border-gray-700/50 rounded-lg text-white/80 text-sm
-            focus:outline-none focus:border-blue-500/50 appearance-none cursor-pointer"
+          className="px-3 py-2.5 bg-gray-900/90 border border-gray-600/40 rounded-lg text-white/90 text-sm
+            focus:outline-none focus:border-blue-500/60 appearance-none cursor-pointer"
           disabled={disabled}
         >
           <option value="whep">WHEP</option>
@@ -74,8 +74,8 @@ export function UrlInput({ onConnect, disabled = false }: UrlInputProps) {
         </select>
 
         {/* URL input */}
-        <div className="flex-1 flex items-center bg-gray-900/80 border border-gray-700/50 rounded-lg focus-within:border-blue-500/50 transition-colors">
-          <IconLink className="text-white/30 ml-3 w-4 h-4 flex-shrink-0" />
+        <div className="flex-1 flex items-center bg-gray-900/90 border border-gray-600/40 rounded-lg focus-within:border-blue-500/60 transition-colors">
+          <IconLink className="text-white/50 ml-3 w-4 h-4 flex-shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -91,7 +91,7 @@ export function UrlInput({ onConnect, disabled = false }: UrlInputProps) {
                 : 'rtsp://camera-ip:554/stream'
             }
             className="flex-1 px-3 py-2.5 bg-transparent text-white/90 text-sm outline-none font-mono
-              placeholder:text-white/20"
+              placeholder:text-white/35"
             disabled={disabled}
             onKeyDown={e => {
               if (e.key === 'Enter') handleSubmit()
@@ -99,7 +99,7 @@ export function UrlInput({ onConnect, disabled = false }: UrlInputProps) {
           />
           {url && (
             <button
-              className="p-1 mr-1 text-white/30 hover:text-white/70"
+              className="p-1 mr-1 text-white/50 hover:text-white/80"
               onClick={() => setUrl('')}
             >
               <IconClose className="w-4 h-4" />
@@ -118,7 +118,7 @@ export function UrlInput({ onConnect, disabled = false }: UrlInputProps) {
       </div>
 
       {/* URL hint */}
-      <div className="mt-1.5 px-2 text-10px text-white/20">
+      <div className="mt-1.5 px-2 text-10px text-white/40">
         {protocol === 'rtsp'
           ? 'RTSP streams are bridged through Live777 engine (RTP→WHEP conversion)'
           : 'Enter a WHEP endpoint URL to start WebRTC playback'}
@@ -127,11 +127,11 @@ export function UrlInput({ onConnect, disabled = false }: UrlInputProps) {
       {/* History dropdown */}
       {showHistory && history.length > 0 && (
         <div className="absolute top-full left-0 right-0 mt-1 panel p-2 z-50 max-h-40 overflow-y-auto">
-          <div className="text-10px text-white/30 px-2 py-1 uppercase tracking-wider">Recent</div>
+          <div className="text-10px text-white/50 px-2 py-1 uppercase tracking-wider">Recent</div>
           {history.map((h, i) => (
             <button
               key={i}
-              className="w-full text-left px-2 py-1.5 text-xs text-white/60 hover:text-white/90
+              className="w-full text-left px-2 py-1.5 text-xs text-white/65 hover:text-white/95
                 hover:bg-white/5 rounded font-mono truncate transition-colors"
               onClick={() => handleSelectHistory(h)}
             >

@@ -21,7 +21,7 @@ export function StreamStats({ stats, connectionState }: StreamStatsProps) {
     closed: 'bg-gray-500'
   }
 
-  const badgeColor = stateColor[connectionState] || 'bg-gray-500'
+  const badgeColor = stateColor[connectionState || ''] || 'bg-gray-500'
 
   return (
     <div className="panel p-3 text-xs font-mono text-white/80 min-w-48 backdrop-blur-md">
@@ -32,15 +32,15 @@ export function StreamStats({ stats, connectionState }: StreamStatsProps) {
       >
         <div className="flex items-center gap-2">
           <span className={`w-2 h-2 rounded-full ${badgeColor}`} />
-          <span className="text-white/60 uppercase tracking-wider text-10px">Stream Info</span>
+          <span className="text-white/70 uppercase tracking-wider text-10px">Stream Info</span>
         </div>
-        <span className="text-white/40 text-10px">{collapsed ? '+' : '−'}</span>
+        <span className="text-white/55 text-10px">{collapsed ? '+' : '−'}</span>
       </div>
 
       {!collapsed && (
         <div className="space-y-1.5">
           {/* Connection State */}
-          <StatRow label="State" value={connectionState} />
+          <StatRow label="State" value={connectionState || 'unknown'} />
 
           {hasData ? (
             <>
@@ -83,7 +83,7 @@ export function StreamStats({ stats, connectionState }: StreamStatsProps) {
               />
             </>
           ) : (
-            <div className="text-white/40 italic">Waiting for data...</div>
+            <div className="text-white/55 italic">Waiting for data...</div>
           )}
         </div>
       )}
@@ -102,7 +102,7 @@ function StatRow({
 }) {
   return (
     <div className="flex justify-between gap-4">
-      <span className="text-white/40">{label}</span>
+      <span className="text-white/55">{label}</span>
       <span className={danger ? 'text-red-400' : 'text-white/80'}>{value}</span>
     </div>
   )

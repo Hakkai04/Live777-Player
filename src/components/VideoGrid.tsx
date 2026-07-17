@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import type { GridMode, StreamProtocol } from '@/types'
 import { useChannelManager } from '@/hooks/useChannelManager'
+import { useSettingsStore } from '@/store/playerStore'
 import { LivePlayer } from './LivePlayer'
 
 interface VideoGridProps {
@@ -11,15 +12,11 @@ interface VideoGridProps {
 /**
  * Multi-stream grid for displaying multiple cameras simultaneously.
  * Uses the channel store to determine which channels to show.
+ * Grid layout is controlled by the settings store (gridMode).
  */
 export function VideoGrid({ activeStreamUrl, activeProtocol }: VideoGridProps) {
   const { channels, activeChannelId, switchChannel } = useChannelManager()
-
-  // Determine which channels to show in grid
-  // In "single" mode, only show active channel
-  // In grid mode, show all channels up to the grid limit
-  const gridMode: GridMode = 'single' // For now, we use single mode with the active player
-  // We can expand this to true multi-view later
+  const gridMode = useSettingsStore(s => s.gridMode)
 
   const gridLimits: Record<GridMode, number> = {
     single: 1,
@@ -30,11 +27,20 @@ export function VideoGrid({ activeStreamUrl, activeProtocol }: VideoGridProps) {
 
   const maxChannels = gridLimits[gridMode]
 
-  // Filter to show: active channel first, then others up to limit
-  const displayedChannels = channels.filter(c => {
-    if (!activeChannelId) return channels.indexOf(c) < maxChannels
-    return c.id === activeChannelId || channels.slice(0, maxChannels - 1).includes(c)
-  }).slice(0, maxChannels)
+  // In grid mode, show active channel first + fill remaining slots
+  // from the channel list, up to the grid limit
+  const displayedChannels = (() => {
+    if (gridMode === 'single') {
+      // Single mode: only the active channel (the URL being played)
+      const ch = channels.find(c => c.id === activeChannelId)
+      return ch ? [ch] : []
+    }
+    // Grid mode: active channel first, then other channels up to the grid limit
+    const others = channels.filter(c => c.id !== activeChannelId)
+    const active = channels.find(c => c.id === activeChannelId)
+    const result = active ? [active, ...others] : [...others]
+    return result.slice(0, maxChannels)
+  })()
 
   const getGridClass = (mode: GridMode): string => {
     switch (mode) {
@@ -94,7 +100,7 @@ export function VideoGrid({ activeStreamUrl, activeProtocol }: VideoGridProps) {
               autoPlay={isActive || displayedChannels.length <= 4}
             />
             {/* Channel label */}
-            <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-xs text-white/80">
+            <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm px-2 py-0.5 rounded text-xs text-white/90">
               {channel.name}
             </div>
             {!isActive && (
@@ -109,8 +115,8 @@ export function VideoGrid({ activeStreamUrl, activeProtocol }: VideoGridProps) {
         Array.from({ length: maxChannels - displayedChannels.length }).map((_, i) => (
           <div
             key={`empty-${i}`}
-            className="rounded-lg bg-gray-900/40 border border-dashed border-gray-700/30
-              flex items-center justify-center text-white/20 text-sm"
+            className="rounded-lg bg-gray-900/60 border border-dashed border-gray-600/30
+              flex items-center justify-center text-white/40 text-sm"
           >
             No stream
           </div>

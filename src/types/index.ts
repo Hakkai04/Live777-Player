@@ -4,6 +4,8 @@ export type PlayerState = 'idle' | 'loading' | 'playing' | 'paused' | 'error'
 
 export type StreamProtocol = 'whep' | 'rtsp'
 
+export type AppMode = 'play' | 'publish'
+
 // ============ Stream Statistics ============
 
 export interface Resolution {
