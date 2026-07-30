@@ -8,8 +8,7 @@ import {
   IconFullscreen,
   IconFullscreenExit,
   IconPictureInPicture,
-  IconScreenshot,
-  IconSettings
+  IconScreenshot
 } from './svg/icons'
 
 interface PlayerControlsProps {
@@ -49,14 +48,14 @@ export function PlayerControls({
         {/* Left: Play/Pause + Stop */}
         <div className="flex items-center gap-1">
           <button
-            className="btn-icon"
+            className="btn btn-ghost btn-square btn-sm"
             onClick={onPlayPause}
             title={isPaused ? 'Play' : 'Pause'}
           >
             {isPaused ? <IconPlay /> : <IconPause />}
           </button>
           <button
-            className="btn-icon"
+            className="btn btn-ghost btn-square btn-sm"
             onClick={onStop}
             title="Stop"
           >
@@ -64,7 +63,7 @@ export function PlayerControls({
           </button>
           {pipSupported && (
             <button
-              className="btn-icon"
+              className="btn btn-ghost btn-square btn-sm"
               onClick={async () => {
                 try {
                   const video = document.querySelector('video')
@@ -92,7 +91,7 @@ export function PlayerControls({
             onMouseLeave={() => setShowVolumeSlider(false)}
           >
             <button
-              className="btn-icon"
+              className="btn btn-ghost btn-square btn-sm"
               onClick={onMuteToggle}
               title={isMuted ? 'Unmute' : 'Mute'}
             >
@@ -123,19 +122,19 @@ export function PlayerControls({
 
             {/* Volume percentage */}
             <span className="text-white/80 text-xs w-8 text-right select-none font-medium">
-              {isMuted ? 'M' : `${volume}`}
+              {isMuted ? 'M' : String(volume)}
             </span>
           </div>
 
           {/* Screenshot */}
-          <button className="btn-icon" onClick={onScreenshot} title="Screenshot">
+          <button className="btn btn-ghost btn-square btn-sm" onClick={onScreenshot} title="Screenshot">
             <IconScreenshot />
           </button>
 
           {/* Fullscreen */}
           {fullscreenSupported && (
             <button
-              className="btn-icon"
+              className="btn btn-ghost btn-square btn-sm"
               onClick={onFullscreenToggle}
               title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
             >

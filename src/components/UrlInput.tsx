@@ -109,7 +109,7 @@ export function UrlInput({ onConnect, disabled = false }: UrlInputProps) {
 
         {/* Connect button */}
         <button
-          className="btn-primary py-2.5 px-6 whitespace-nowrap"
+          className="btn btn-primary py-2.5 px-6 whitespace-nowrap"
           onClick={handleSubmit}
           disabled={disabled || !url.trim()}
         >

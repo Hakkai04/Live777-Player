@@ -114,7 +114,7 @@ export function VideoGrid({ activeStreamUrl, activeProtocol }: VideoGridProps) {
       {displayedChannels.length < maxChannels &&
         Array.from({ length: maxChannels - displayedChannels.length }).map((_, i) => (
           <div
-            key={`empty-${i}`}
+            key={`empty-${String(i)}`}
             className="rounded-lg bg-gray-900/60 border border-dashed border-gray-600/30
               flex items-center justify-center text-white/40 text-sm"
           >

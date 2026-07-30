@@ -4,8 +4,6 @@ import { useSettingsStore, setGridMode } from '@/store/playerStore'
 import {
   IconAdd,
   IconClose,
-  IconSwap,
-  IconGrid,
   IconCamera
 } from './svg/icons'
 import type { StreamProtocol, GridMode } from '@/types'
@@ -26,7 +24,7 @@ export function ChannelSwitcher({ onSelectChannel }: ChannelSwitcherProps) {
 
   const handleAdd = () => {
     if (!newUrl.trim()) return
-    const name = newName.trim() || `Channel ${channels.length + 1}`
+    const name = newName.trim() || `Channel ${String(channels.length + 1)}`
     const protocol: StreamProtocol = newUrl.startsWith('rtsp://') ? 'rtsp' : 'whep'
     addChannel(name, newUrl.trim(), protocol)
     setNewName('')
@@ -49,7 +47,7 @@ export function ChannelSwitcher({ onSelectChannel }: ChannelSwitcherProps) {
   ]
 
   return (
-    <div className="panel p-4 h-full flex flex-col">
+    <div className="card bg-base-200/90 backdrop-blur-sm border border-base-content/10 rounded-xl p-4 h-full flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-white/80 font-medium text-sm">Channels</h3>
@@ -72,7 +70,7 @@ export function ChannelSwitcher({ onSelectChannel }: ChannelSwitcherProps) {
             ))}
           </div>
           <button
-            className="btn-icon"
+            className="btn btn-ghost btn-square btn-sm"
             onClick={() => setShowAdd(!showAdd)}
             title="Add Channel"
           >
@@ -101,7 +99,7 @@ export function ChannelSwitcher({ onSelectChannel }: ChannelSwitcherProps) {
             onKeyDown={e => e.key === 'Enter' && handleAdd()}
           />
           <div className="flex gap-2">
-            <button className="btn-primary text-xs py-1 px-3" onClick={handleAdd}>
+            <button className="btn btn-primary text-xs py-1 px-3" onClick={handleAdd}>
               Add
             </button>
             <button

@@ -24,13 +24,13 @@ export function CameraPublisher({ onCopied }: CameraPublisherProps) {
 
   const { stream, state, error, whepUrl, connect, disconnect } = useWhipPublisher({
     streamId: activeStreamId,
-    cameraId: cameraId || undefined,
-    micId: micId || undefined
+    ...(cameraId ? { cameraId } : {}),
+    ...(micId ? { micId } : {})
   })
 
   // Load device list (request permission first)
   useEffect(() => {
-    loadDevices()
+    void loadDevices()
   }, [])
 
   const loadDevices = async () => {
@@ -45,12 +45,12 @@ export function CameraPublisher({ onCopied }: CameraPublisherProps) {
     setCameras(
       devices
         .filter(d => d.kind === 'videoinput')
-        .map((d, i) => ({ deviceId: d.deviceId, label: d.label || `Camera ${i + 1}` }))
+        .map((d, i) => ({ deviceId: d.deviceId, label: d.label || `Camera ${String(i + 1)}` }))
     )
     setMics(
       devices
         .filter(d => d.kind === 'audioinput')
-        .map((d, i) => ({ deviceId: d.deviceId, label: d.label || `Mic ${i + 1}` }))
+        .map((d, i) => ({ deviceId: d.deviceId, label: d.label || `Mic ${String(i + 1)}` }))
     )
   }
 
@@ -84,7 +84,7 @@ export function CameraPublisher({ onCopied }: CameraPublisherProps) {
   useEffect(() => {
     if (activeStreamId && !didConnectRef.current) {
       didConnectRef.current = true
-      connect()
+      void connect()
     }
     if (!activeStreamId) {
       didConnectRef.current = false
@@ -116,13 +116,13 @@ export function CameraPublisher({ onCopied }: CameraPublisherProps) {
   const hasError = state === 'error'
 
   // Status badge
-  const statusInfo: Record<string, { color: string; text: string }> = {
+  const statusInfo = {
     idle: { color: 'bg-gray-500', text: 'Idle' },
     loading: { color: 'bg-yellow-500', text: 'Connecting...' },
     playing: { color: 'bg-green-500', text: 'Publishing' },
     error: { color: 'bg-red-500', text: 'Error' }
-  }
-  const status = statusInfo[state] || statusInfo.idle
+  } as const
+  const status = statusInfo[state as keyof typeof statusInfo] ?? statusInfo.idle
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 h-full p-3 lg:p-6 overflow-y-auto">
@@ -180,7 +180,7 @@ export function CameraPublisher({ onCopied }: CameraPublisherProps) {
         <div className="flex gap-3">
           {!isPublishing ? (
             <button
-              className="btn-primary flex-1 flex items-center justify-center gap-2 py-2.5"
+              className="btn btn-primary flex-1 flex items-center justify-center gap-2 py-2.5"
               onClick={handleStart}
               disabled={!streamId.trim()}
             >
@@ -207,7 +207,7 @@ export function CameraPublisher({ onCopied }: CameraPublisherProps) {
 
         {/* Error message */}
         {hasError && error && (
-          <div className="panel px-4 py-3 border-red-500/30">
+          <div className="card bg-base-200/90 backdrop-blur-sm border border-base-content/10 rounded-xl px-4 py-3 border-red-500/30">
             <div className="flex items-start gap-2">
               <IconError className="text-red-400 w-5 h-5 flex-shrink-0 mt-0.5" />
               <div>
@@ -220,7 +220,7 @@ export function CameraPublisher({ onCopied }: CameraPublisherProps) {
 
         {/* WHEP URL display */}
         {whepUrl && (
-          <div className="panel px-4 py-4 space-y-3">
+          <div className="card bg-base-200/90 backdrop-blur-sm border border-base-content/10 rounded-xl px-4 py-4 space-y-3">
             <p className="text-white/70 text-xs">
               Stream is live! Others can play it with this URL:
             </p>

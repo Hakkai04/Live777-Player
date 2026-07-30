@@ -88,8 +88,8 @@
                             │ RTP
                             ▼
                     ┌──────────────────────────────────┐
-                    │   RTSP 桥接（可选，端口 4001）     │
-                    │   server/bridge.go               │
+                    │   RTSP 桥接（可选，端口 4001/4002）│
+                    │   server-rust/ (Rust + axum)         │
                     └───────┬──────────────────────────┘
                             │ RTSP
                             ▼
@@ -290,8 +290,12 @@ RTSP 通过 **RTSP 桥接服务**支持。
 **启动 RTSP 桥接服务：**
 
 ```bash
-cd player/server
-go run bridge.go
+# Rust 版（推荐，编译期类型检查 + tracing 结构化日志）
+cd player/server-rust && cargo run
+# → 监听 http://localhost:4002
+
+# Go 版（原版）
+cd player/server && go run bridge.go
 # → 监听 http://localhost:4001
 ```
 
@@ -300,7 +304,8 @@ go run bridge.go
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
 | `LIVE777_URL` | `http://localhost:7777` | Live777 引擎地址 |
-| `BRIDGE_PORT` | `4001` | 桥接服务监听端口 |
+| `BRIDGE_PORT` | `4001` | Go 桥接服务监听端口 |
+| `BRIDGE_PORT` | `4002` | Rust 桥接服务监听端口 |
 
 生产环境也可直接使用 FFmpeg 做 RTSP → WHIP 转换：
 
@@ -331,11 +336,21 @@ Vite 开发服务器已配置 `host: '0.0.0.0'`，监听所有网络接口，手
 WebRTC 播放和推流都需要 Live777 引擎运行。
 
 ```bash
-# 使用 Docker（推荐）
+# 方式一：直接下载预编译二进制（Windows/macOS/Linux）
+# 从 GitHub Releases 下载: https://github.com/binbat/live777/releases
+# Windows: live777-v0.9.0-x86_64-pc-windows-msvc.zip
+# 解压后运行:
+./live777.exe -c live777.toml
+
+# 方式二：使用 Docker
 docker run -d \
   --name live777 \
   -p 7777:7777 \
   ghcr.io/binbat/live777-server:latest
+
+# 方式三：从源码编译（需 Rust 工具链）
+git clone https://github.com/binbat/live777
+cd live777 && cargo build --release
 
 # 验证运行状态
 curl http://localhost:7777/
@@ -361,11 +376,31 @@ player/
 ├── index.html                     # 入口 HTML
 ├── package.json                   # 依赖和脚本
 ├── vite.config.ts                 # Vite 配置（代理、host、别名、构建输出）
-├── tsconfig.json                  # TypeScript 配置
-├── uno.config.ts                  # UnoCSS 快捷方式和预设
+├── tsconfig.json                  # TypeScript 严格模式配置（7 项 strict 标志）
+├── eslint.config.mjs              # ESLint flat config（strictTypeChecked）
+├── playwright.config.ts           # Playwright E2E 测试配置
 │
-├── server/
-│   └── bridge.go                  # Go: RTSP → WHEP 桥接服务
+├── .github/
+│   └── workflows/
+│       └── ci.yml                 # GitHub Actions：类型检查、构建、E2E、Rust 检查
+│
+├── server/                        # Go RTSP 桥接（原版）
+│   └── bridge.go
+│
+├── server-rust/                   # Rust RTSP 桥接（新版，axum 0.8）
+│   ├── Cargo.toml
+│   └── src/
+│       ├── main.rs                # 服务启动、路由、CORS、关联 ID 中间件
+│       ├── types.rs               # Serde 请求/响应类型
+│       ├── state.rs               # Arc<RwLock<HashMap>> 共享状态
+│       ├── error.rs               # thiserror 统一错误类型
+│       ├── logging.rs             # tracing-subscriber 结构化日志
+│       └── routes/
+│           ├── health.rs          # GET /bridge/health
+│           └── rtsp.rs            # POST/GET/DELETE /bridge/rtsp
+│
+├── tests/
+│   └── player.spec.ts             # 14 个 Playwright E2E 测试场景
 │
 ├── public/
 │   └── push.html                  # 独立推流页面（早期原型）
@@ -373,7 +408,7 @@ player/
 └── src/
     ├── main.tsx                   # React 根节点挂载
     ├── App.tsx                    # 根组件：双端响应式布局、Play/Publish 模式切换
-    ├── index.css                  # 全局样式（暗色主题、按钮重置、滚动条、滑块）
+    ├── index.css                  # daisyUI 暗色主题 + Tailwind CSS v4
     │
     ├── types/
     │   └── index.ts               # 全部 TypeScript 类型和接口定义
@@ -385,7 +420,8 @@ player/
     │   ├── whep-client.ts         # WHEP 拉流客户端（RTCPeerConnection + whip-whep 库）
     │   ├── whip-client.ts         # WHIP 推流客户端（getUserMedia + RTCPeerConnection）
     │   ├── stats-parser.ts        # getStats() 报告解析器（码率/丢包率差值计算）
-    │   └── storage.ts             # localStorage 工具函数（URL 历史记录）
+    │   ├── storage.ts             # localStorage 工具函数（URL 历史记录）
+    │   └── logger.ts              # 结构化日志（JSON 格式、关联 ID、模块标记）
     │
     ├── hooks/
     │   ├── useWhepPlayer.ts       # WHEP 拉流生命周期 hook
@@ -412,6 +448,10 @@ player/
 npm run dev         # 启动 Vite 开发服务器（端口 3000，监听所有网络接口）
 npm run build       # TypeScript 检查 + Vite 生产构建 → dist/
 npm run preview     # 本地预览生产构建
+npm run lint        # ESLint 检查
+npm run lint:strict # ESLint 严格模式（警告也视为错误）
+npm run test:e2e    # Playwright E2E 测试
+npm run test:e2e:ui # Playwright 交互式 UI 模式
 ```
 
 ### 开发代理配置
@@ -426,17 +466,52 @@ Vite 开发服务器代理请求，开发时无需配置 CORS：
 
 ---
 
+## AI Vibe Coding 设计
+
+本项目采用 **AI Vibe Coding** 理念重新设计技术栈，核心原则：**尽可能在编译期暴露问题，用严格约束限制 AI 生成代码的随意性**。
+
+> AI 多写 20% 的类型代码，换来 80% 的 Debug 时间节约。
+
+| 设计决策 | 理由 |
+|----------|------|
+| **TypeScript 7 项 strict 标志全开** | `noUncheckedIndexedAccess`、`exactOptionalPropertyTypes` 等让数组访问和可选属性在编译期就暴露问题 |
+| **ESLint `strictTypeChecked`** | 禁用 `any`、不安全的 member/call/return，从源头防止宽松类型 |
+| **Tailwind CSS + daisyUI** | 原子化 CSS 防止 AI 发明混乱样式；daisyUI 语义组件约束 UI 结构 |
+| **Rust + axum 替代 Go** | 编译期保证无数据竞争、无 nil 指针、错误穷举；Serde 编译期校验 JSON |
+| **结构化日志（JSON）** | 含关联 ID、模块标记、ISO 时间戳——AI 可快速归因和定位问题 |
+| **Playwright E2E CI** | 每次 PR 自动回归测试，防止 AI 生成代码引入回归 |
+
+---
+
+## CI/CD
+
+GitHub Actions 工作流（`.github/workflows/ci.yml`）：
+
+| Job | 内容 |
+|-----|------|
+| **TypeCheck + Lint** | `tsc --noEmit` + `eslint src/` |
+| **Build** | Vite 生产构建 |
+| **Playwright E2E** | 14 个测试场景，覆盖 URL 输入 / 播放控制 / 频道管理 / 网格模式 / 推流 / 移动端布局 |
+| **Rust Check** | `cargo check` + `cargo clippy -- -D warnings` + `cargo test` |
+
+触发条件：`push` / `pull_request` 到 `main` 分支。
+
+---
+
 ## 技术栈
 
 | 技术 | 版本 | 用途 |
 |------|------|------|
 | [React](https://react.dev) | 18.3 | UI 框架 |
-| [TypeScript](https://www.typescriptlang.org) | 5.6 | 类型安全 |
+| [TypeScript](https://www.typescriptlang.org) | 5.6 | 类型安全（7 项 strict 标志全开） |
 | [Vite](https://vitejs.dev) | 5.4 | 构建工具和开发服务器 |
-| [UnoCSS](https://unocss.dev) | 0.64 | 原子化 CSS 引擎 |
+| [Tailwind CSS](https://tailwindcss.com) + [daisyUI](https://daisyui.com) | 4.3 / 5.7 | 原子化 CSS + 语义组件库 |
 | [whip-whep](https://www.npmjs.com/package/whip-whep) | 1.2.0 | WHIP/WHEP IETF 协议客户端库 |
 | [Zustand](https://zustand-demo.pmnd.rs) | 5.0 | 状态管理（含 localStorage 持久化） |
-| [Go](https://go.dev) | 1.21 | RTSP 桥接服务 |
+| [ESLint](https://eslint.org) | 10.x | `strictTypeChecked` 规则集 |
+| [Rust](https://www.rust-lang.org) + [axum](https://docs.rs/axum) | 0.8 | RTSP 桥接服务（类型安全编译期检查） |
+| [Playwright](https://playwright.dev) | 1.62 | E2E 自动化回归测试 |
+| Go | 1.21 | RTSP 桥接服务（原版，逐步迁移至 Rust） |
 
 ---
 

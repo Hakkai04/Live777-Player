@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { defineConfig } from 'vite'
-import UnoCSS from 'unocss/vite'
+import tailwindcss from '@tailwindcss/vite'
 import React from '@vitejs/plugin-react'
 
 const PlayerRoot = path.resolve(import.meta.dirname)
@@ -23,7 +23,7 @@ export default defineConfig({
     emptyOutDir: true
   },
   plugins: [
-    UnoCSS(path.resolve(PlayerRoot, 'uno.config.ts')),
+    tailwindcss(),
     React()
   ],
   resolve: {

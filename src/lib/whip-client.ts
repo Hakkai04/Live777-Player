@@ -13,9 +13,9 @@
  */
 
 import type { PlayerState } from '@/types'
+import { createLogger, generateCorrelationId } from './logger'
 
-const RESTART_STATES: string[] = ['disconnected', 'failed', 'closed']
-
+const log = createLogger('WhipClient')
 export class WhipClient {
   private pc: RTCPeerConnection | null = null
   private stream: MediaStream | null = null
@@ -25,6 +25,7 @@ export class WhipClient {
   private _state: PlayerState = 'idle'
   private _error: Error | null = null
   private _whepUrl: string | null = null
+  private corrId: string
 
   // Callbacks
   private onStateChange: ((state: PlayerState) => void) | null = null
@@ -34,6 +35,7 @@ export class WhipClient {
     this.streamId = streamId
     this.cameraId = cameraId
     this.micId = micId
+    this.corrId = generateCorrelationId()
   }
 
   get state(): PlayerState {
@@ -74,24 +76,26 @@ export class WhipClient {
   private onConnectionStateChange = () => {
     if (!this.pc) return
     const connState = this.pc.connectionState
-    switch (connState) {
-      case 'connected':
-        this.setState('playing')
-        break
-      case 'disconnected':
-      case 'failed':
-      case 'closed':
-        if (RESTART_STATES.includes(connState)) {
-          this.setState('error', new Error(`Connection ${connState}`))
-        }
-        break
-    }
+	    switch (connState) {
+	      case 'connected':
+	        this.setState('playing')
+	        break
+	      case 'disconnected':
+	      case 'failed':
+	      case 'closed':
+	        this.setState('error', new Error(`Connection ${connState ?? 'unknown'}`))
+	        break
+	      case 'new':
+	      case 'connecting':
+	        break
+	    }
   }
 
   async connect(): Promise<void> {
     if (this._state === 'playing' || this._state === 'loading') return
 
     this.setState('loading')
+    log.info('Starting WHIP publish', { streamId: this.streamId, corrId: this.corrId })
 
     try {
       // Request camera + microphone
@@ -136,7 +140,7 @@ export class WhipClient {
       })
 
       if (!resp.ok) {
-        throw new Error(`WHIP publish failed: ${resp.status} ${resp.statusText}`)
+        throw new Error(`WHIP publish failed: ${String(resp.status)} ${resp.statusText}`)
       }
 
       // Set remote answer
@@ -145,13 +149,16 @@ export class WhipClient {
 
       // Build the WHEP playback URL
       this._whepUrl = `/whep/${this.streamId}`
+      log.info('WHIP publish successful', { streamId: this.streamId, whepUrl: this._whepUrl, corrId: this.corrId })
     } catch (e) {
       const err = e instanceof Error ? e : new Error(String(e))
+      log.error('WHIP publish failed', err, { streamId: this.streamId, corrId: this.corrId })
       this.setState('error', err)
     }
   }
 
   async disconnect(): Promise<void> {
+    log.info('Stopping WHIP publish', { streamId: this.streamId, corrId: this.corrId })
     try {
       if (this.pc) {
         const origin = window.location.origin

@@ -1,5 +1,8 @@
 import { WHEPClient } from 'whip-whep/whep'
 import type { PlayerState } from '@/types'
+import { createLogger, generateCorrelationId } from './logger'
+
+const log = createLogger('WhepClient')
 
 /**
  * WHEP Client wrapper for receiving WebRTC streams from Live777.
@@ -46,11 +49,11 @@ function normalizeUrl(input: string): string {
   const localMatch = input.match(
     /^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?(\/(?:whep|whip)\/\S+)$/i
   )
-  if (localMatch) return new URL(localMatch[1], origin).href
+  if (localMatch?.[1]) return new URL(localMatch[1], origin).href
 
   // Any other URL that contains /whep/ or /whip/ — extract the path, resolve locally
   const whepMatch = input.match(/(\/(?:whep|whip)\/\S+)$/)
-  if (whepMatch) return new URL(whepMatch[1], origin).href
+  if (whepMatch?.[1]) return new URL(whepMatch[1], origin).href
 
   // Remote absolute URLs — pass through as-is
   return input
@@ -64,6 +67,7 @@ export class WhepClient {
   private timer: ReturnType<typeof setInterval> | null = null
   private _state: PlayerState = 'idle'
   private _error: Error | null = null
+  private corrId: string
 
   // Callbacks
   private onStateChange: ((state: PlayerState) => void) | null = null
@@ -74,6 +78,7 @@ export class WhepClient {
     this.url = normalizeUrl(url)
     this.client = new WHEPClient()
     this.stream = new MediaStream()
+    this.corrId = generateCorrelationId()
   }
 
   get state(): PlayerState {
@@ -112,16 +117,19 @@ export class WhepClient {
   private onConnectionStateChange = () => {
     if (!this.pc) return
     const connState = this.pc.connectionState
-    switch (connState) {
-      case 'connected':
-        this.setState('playing')
-        break
-      case 'disconnected':
-      case 'failed':
-      case 'closed':
-        this.setState('error', new Error(`Connection ${connState}`))
-        break
-    }
+	    switch (connState) {
+	      case 'connected':
+	        this.setState('playing')
+	        break
+	      case 'disconnected':
+	      case 'failed':
+	      case 'closed':
+	        this.setState('error', new Error(`Connection ${connState ?? 'unknown'}`))
+	        break
+	      case 'new':
+	      case 'connecting':
+	        break
+	    }
   }
 
   private onTrack = (ev: RTCTrackEvent) => {
@@ -136,9 +144,13 @@ export class WhepClient {
   }
 
   async connect(): Promise<void> {
-    if (this._state === 'playing' || this._state === 'loading') return
+    if (this._state === 'playing' || this._state === 'loading') {
+      log.warn('Connect called but already connected/connecting', { state: this._state, corrId: this.corrId })
+      return
+    }
 
     this.setState('loading')
+    log.info('Connecting to WHEP stream', { url: this.url, corrId: this.corrId })
     this.pc = new RTCPeerConnection({
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
@@ -157,6 +169,7 @@ export class WhepClient {
 
       await this.client.view(this.pc, this.url)
       this.startWatchdog()
+      log.info('WHEP view established', { corrId: this.corrId })
     } catch (e) {
       const err = e instanceof Error ? e : new Error(String(e))
       // Provide a friendlier message for CORS errors
@@ -173,6 +186,7 @@ export class WhepClient {
   }
 
   async disconnect(): Promise<void> {
+    log.info('Disconnecting WHEP stream', { corrId: this.corrId })
     this.stopWatchdog()
     try {
       await this.client.stop()
@@ -214,8 +228,8 @@ export class WhepClient {
     if (!this.pc) return
     const connState = this.pc.connectionState
     if (RESTART_STATES.includes(connState!)) {
-      console.warn('[WhepClient] Watchdog restarting...')
-      this.restart()
+      log.warn('Watchdog restarting connection', { connectionState: connState, corrId: this.corrId })
+      void this.restart()
     }
   }
 }

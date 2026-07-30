@@ -1,71 +1,67 @@
-/* ===== Live777 Player — Global Styles ===== */
+/* ===== Live777 Player — Tailwind CSS v4 + daisyUI v5 ===== */
 
-:root {
-  --bg-primary: #0b1121;
-  --bg-secondary: #111827;
-  --bg-panel: rgba(17, 24, 39, 0.85);
-  --text-primary: #e5e7eb;
-  --text-secondary: #9ca3af;
-  --accent: #3b82f6;
-  --accent-hover: #2563eb;
-  --danger: #ef4444;
-  --border: rgba(75, 85, 99, 0.3);
+@import "tailwindcss";
+
+/* daisyUI v5 with custom Live777 dark theme */
+@plugin "daisyui" {
+  themes: live777 --default;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@plugin "daisyui/theme" {
+  name: "live777";
+  default: true;
+  prefersdark: true;
+  color-scheme: dark;
+
+  /* Brand */
+  --color-primary: #3b82f6;       /* blue-500 */
+  --color-primary-content: #ffffff;
+  --color-secondary: #6366f1;     /* indigo-500 */
+  --color-secondary-content: #ffffff;
+  --color-accent: #22d3ee;        /* cyan-400 */
+  --color-accent-content: #000000;
+
+  /* Background */
+  --color-base-100: #0b1121;      /* page background */
+  --color-base-200: #111827;      /* panel/card background */
+  --color-base-300: #1f2937;      /* darker accent panels */
+  --color-base-content: #e5e7eb;  /* primary text */
+
+  /* Semantic */
+  --color-info: #3b82f6;
+  --color-info-content: #ffffff;
+  --color-success: #22c55e;
+  --color-success-content: #ffffff;
+  --color-warning: #f59e0b;
+  --color-warning-content: #000000;
+  --color-error: #ef4444;
+  --color-error-content: #ffffff;
+
+  /* Radii */
+  --radius-box: 0.75rem;
+  --radius-btn: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-selector: 0.5rem;
 }
 
+/* ===== Custom props that survive migration ===== */
+
+/* Scrollbar (daisyUI doesn't style scrollbars) */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
+
+/* Button reset — prevents browser defaults that daisyUI doesn't handle */
 button {
-  -webkit-appearance: none;
   appearance: none;
-  background: transparent;
+  -webkit-appearance: none;
 }
 
-html, body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-#root {
-  width: 100%;
-  height: 100%;
-}
-
-/* ===== Scrollbar ===== */
-
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.25);
-  border-radius: 2px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.4);
-}
-
-/* ===== Range Slider ===== */
-
+/* Custom range slider styling (daisyUI range is too bright for dark theme) */
 input[type='range'] {
-  -webkit-appearance: none;
   appearance: none;
+  -webkit-appearance: none;
   background: transparent;
   cursor: pointer;
 }
@@ -100,40 +96,9 @@ input[type='range']::-moz-range-thumb {
   border: none;
 }
 
-/* ===== Animations ===== */
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-/* ===== Utility ===== */
+/* ===== Legacy utility (keep for compatibility) ===== */
 
 .text-10px {
   font-size: 10px;
-}
-
-/* ===== Responsive ===== */
-
-/* Mobile: compact controls, stacked layout */
-@media (max-width: 640px) {
-  .btn-icon {
-    padding: 0.5rem;
-  }
-
-  .btn-icon svg {
-    width: 20px;
-    height: 20px;
-  }
-}
-
-/* Hide PiP button on unsupported browsers */
-@supports not (picture-in-picture: auto) {
-  .pip-hidden {
-    display: none;
-  }
+  line-height: 1.2;
 }

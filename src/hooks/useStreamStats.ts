@@ -27,11 +27,11 @@ export function useStreamStats(
     }
 
     // Do an immediate read
-    collectStats(pc, setStats)
+    void collectStats(pc, setStats)
 
     // Poll at regular intervals
     timerRef.current = setInterval(() => {
-      collectStats(pc, setStats)
+      void collectStats(pc, setStats)
     }, STATS_INTERVAL)
 
     return () => {

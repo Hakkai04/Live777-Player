@@ -15,7 +15,7 @@ const defaultSettings: PlayerSettings = {
 
 export const useSettingsStore = create<PlayerSettings>()(
   persist(
-    (_set) => defaultSettings,
+    (_set: unknown) => defaultSettings,
     { name: 'player-settings' }
   )
 )
@@ -79,8 +79,8 @@ export const useChannelStore = create<ChannelStore>()(
       reorderChannels: (fromIndex: number, toIndex: number) =>
         set(s => {
           const channels = [...s.channels]
-          const [removed] = channels.splice(fromIndex, 1)
-          channels.splice(toIndex, 0, removed)
+          const removed = channels.splice(fromIndex, 1)[0]
+          if (removed) { channels.splice(toIndex, 0, removed) }
           return { channels }
         }),
 

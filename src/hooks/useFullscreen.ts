@@ -8,6 +8,18 @@ interface UseFullscreenReturn {
   toggle: () => Promise<void>
 }
 
+/** Extended document type for webkit-prefixed fullscreen API */
+type WebkitDocument = Document & {
+  webkitFullscreenEnabled?: boolean
+  webkitFullscreenElement?: Element | null
+  webkitExitFullscreen?: () => Promise<void>
+}
+
+/** Extended element type for webkit-prefixed fullscreen API */
+type WebkitElement = HTMLElement & {
+  webkitRequestFullscreen?: () => Promise<void>
+}
+
 /**
  * Hook for managing fullscreen state on a container element.
  *
@@ -19,13 +31,12 @@ export function useFullscreen(ref: RefObject<HTMLElement | null>): UseFullscreen
 
   const isSupported =
     typeof document !== 'undefined' &&
-    (!!document.fullscreenEnabled ||
-      !!(document as any).webkitFullscreenEnabled)
+    (document.fullscreenEnabled || (document as WebkitDocument).webkitFullscreenEnabled === true)
 
   // Listen for fullscreen change events
   useEffect(() => {
     const onChange = () => {
-      setIsFullscreen(!!document.fullscreenElement)
+      setIsFullscreen(document.fullscreenElement !== null)
     }
     document.addEventListener('fullscreenchange', onChange)
     document.addEventListener('webkitfullscreenchange', onChange)
@@ -41,8 +52,9 @@ export function useFullscreen(ref: RefObject<HTMLElement | null>): UseFullscreen
     try {
       if (el.requestFullscreen) {
         await el.requestFullscreen()
-      } else if ((el as any).webkitRequestFullscreen) {
-        await (el as any).webkitRequestFullscreen()
+      } else {
+        const webkitEl = el as WebkitElement
+        await webkitEl.webkitRequestFullscreen?.()
       }
     } catch (e) {
       // Fullscreen request was denied (e.g., user didn't interact first)
@@ -54,8 +66,9 @@ export function useFullscreen(ref: RefObject<HTMLElement | null>): UseFullscreen
     try {
       if (document.exitFullscreen) {
         await document.exitFullscreen()
-      } else if ((document as any).webkitExitFullscreen) {
-        await (document as any).webkitExitFullscreen()
+      } else {
+        const webkitDoc = document as WebkitDocument
+        await webkitDoc.webkitExitFullscreen?.()
       }
     } catch {
       // ignore

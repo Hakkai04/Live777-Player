@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
-import type { PlayerState, StreamProtocol } from '@/types'
+import type { StreamProtocol } from '@/types'
 import { useWhepPlayer } from '@/hooks/useWhepPlayer'
 import { useStreamStats } from '@/hooks/useStreamStats'
 import { useFullscreen } from '@/hooks/useFullscreen'
@@ -16,7 +16,6 @@ interface LivePlayerProps {
 
 export function LivePlayer({
   streamUrl,
-  streamType = 'whep',
   autoPlay = true
 }: LivePlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -130,7 +129,7 @@ export function LivePlayer({
 
     if (timeSinceLastTap < 350 && fullscreen.isSupported) {
       // Double tap → toggle fullscreen
-      fullscreen.toggle()
+      void fullscreen.toggle()
       return
     }
 
@@ -158,7 +157,7 @@ export function LivePlayer({
           break
         case 'f':
         case 'F':
-          fullscreen.toggle()
+          void fullscreen.toggle()
           break
         case 'm':
         case 'M': {
@@ -167,7 +166,7 @@ export function LivePlayer({
           break
         }
         case 'Escape':
-          if (fullscreen.isFullscreen) fullscreen.exit()
+          if (fullscreen.isFullscreen) void fullscreen.exit()
           break
       }
     }
@@ -191,7 +190,7 @@ export function LivePlayer({
 
     // Download
     const link = document.createElement('a')
-    link.download = `live777-screenshot-${Date.now()}.png`
+    link.download = `live777-screenshot-${String(Date.now())}.png`
     link.href = dataUrl
     link.click()
   }, [])
@@ -250,7 +249,7 @@ export function LivePlayer({
           <p className="text-white/80 text-base lg:text-lg font-medium mb-2">Connection Error</p>
           <p className="text-white/65 text-sm mb-4">{error?.message || 'Unknown error'}</p>
           <button
-            className="btn-primary"
+            className="btn btn-primary"
             onClick={() => restart()}
           >
             Reconnect

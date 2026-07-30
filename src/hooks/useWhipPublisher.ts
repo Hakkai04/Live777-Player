@@ -48,7 +48,7 @@ export function useWhipPublisher({
   useEffect(() => {
     // Cleanup previous client
     if (clientRef.current) {
-      clientRef.current.disconnect()
+      void clientRef.current.disconnect()
       clientRef.current = null
     }
 
@@ -75,14 +75,14 @@ export function useWhipPublisher({
     })
 
     if (autoConnect) {
-      client.connect().then(() => {
+      void client.connect().then(() => {
         setStream(client.getStream())
         setWhepUrl(client.getWhepUrl())
       })
     }
 
     return () => {
-      client.disconnect()
+      void client.disconnect()
       clientRef.current = null
     }
   }, [streamId])
@@ -97,7 +97,7 @@ export function useWhipPublisher({
 
   const disconnect = useCallback(() => {
     if (clientRef.current) {
-      clientRef.current.disconnect()
+      void clientRef.current.disconnect()
     }
     setStream(null)
     setState('idle')

@@ -24,7 +24,7 @@ export function StreamStats({ stats, connectionState }: StreamStatsProps) {
   const badgeColor = stateColor[connectionState || ''] || 'bg-gray-500'
 
   return (
-    <div className="panel p-3 text-xs font-mono text-white/80 min-w-48 backdrop-blur-md">
+    <div className="card bg-base-200/90 backdrop-blur-sm border border-base-content/10 rounded-xl p-3 text-xs font-mono text-white/80 min-w-48 backdrop-blur-md">
       {/* Header — click to collapse */}
       <div
         className="flex items-center justify-between cursor-pointer mb-2"
@@ -42,44 +42,44 @@ export function StreamStats({ stats, connectionState }: StreamStatsProps) {
           {/* Connection State */}
           <StatRow label="State" value={connectionState || 'unknown'} />
 
-          {hasData ? (
+          {hasData && stats ? (
             <>
               {/* Resolution */}
               <StatRow
                 label="Resolution"
-                value={`${stats!.resolution.width}×${stats!.resolution.height}`}
+                value={`${String(stats.resolution.width)}×${String(stats.resolution.height)}`}
               />
 
               {/* Bitrate */}
               <StatRow
                 label="Bitrate"
-                value={stats!.bitrate > 0 ? `${stats!.bitrate} kbps` : '--'}
+                value={stats.bitrate > 0 ? `${String(stats.bitrate)} kbps` : '--'}
               />
 
               {/* Frame Rate */}
               <StatRow
                 label="FPS"
-                value={stats!.frameRate > 0 ? `${stats!.frameRate}` : '--'}
+                value={stats.frameRate > 0 ? String(stats.frameRate) : '--'}
               />
 
               {/* Codec */}
-              <StatRow label="Codec" value={stats!.codec || '--'} />
+              <StatRow label="Codec" value={stats.codec || '--'} />
 
               {/* Latency */}
               <StatRow
                 label="RTT"
-                value={stats!.latency.rtt > 0 ? `${stats!.latency.rtt}ms` : '--'}
+                value={stats.latency.rtt > 0 ? `${String(stats.latency.rtt)}ms` : '--'}
               />
               <StatRow
                 label="Jitter"
-                value={stats!.latency.jitter > 0 ? `${stats!.latency.jitter}ms` : '--'}
+                value={stats.latency.jitter > 0 ? `${String(stats.latency.jitter)}ms` : '--'}
               />
 
               {/* Packet Loss */}
               <StatRow
                 label="Loss"
-                value={`${stats!.packetLoss.toFixed(1)}%`}
-                danger={stats!.packetLoss > 2}
+                value={`${stats.packetLoss.toFixed(1)}%`}
+                danger={stats.packetLoss > 2}
               />
             </>
           ) : (

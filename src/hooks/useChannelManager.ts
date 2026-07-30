@@ -69,5 +69,5 @@ export function useChannelManager() {
 }
 
 function generateChannelId(): string {
-  return `ch-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  return `ch-${String(Date.now())}-${Math.random().toString(36).slice(2, 8)}`
 }

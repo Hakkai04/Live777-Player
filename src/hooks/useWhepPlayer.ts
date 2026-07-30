@@ -37,7 +37,7 @@ export function useWhepPlayer(url: string | null, autoConnect = true): UseWhepPl
   useEffect(() => {
     // Cleanup previous client
     if (clientRef.current) {
-      clientRef.current.disconnect()
+      void clientRef.current.disconnect()
       clientRef.current = null
     }
 
@@ -67,11 +67,11 @@ export function useWhepPlayer(url: string | null, autoConnect = true): UseWhepPl
     })
 
     if (autoConnect) {
-      client.connect()
+      void client.connect()
     }
 
     return () => {
-      client.disconnect()
+      void client.disconnect()
       clientRef.current = null
     }
   }, [url])
@@ -84,7 +84,7 @@ export function useWhepPlayer(url: string | null, autoConnect = true): UseWhepPl
 
   const disconnect = useCallback(() => {
     if (clientRef.current) {
-      clientRef.current.disconnect()
+      void clientRef.current.disconnect()
     }
     setStream(null)
     setState('idle')

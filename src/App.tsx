@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import type { StreamProtocol, AppMode, GridMode } from '@/types'
+import type { StreamProtocol, AppMode, GridMode, PlayerSettings } from '@/types'
 import { useChannelManager } from '@/hooks/useChannelManager'
 import { useSettingsStore, setGridMode } from '@/store/playerStore'
 import { ChannelSwitcher } from '@/components/ChannelSwitcher'
@@ -114,7 +114,7 @@ export default function App() {
             <ModeSwitch />
             {appMode === 'play' && (
               <button
-                className="btn-icon"
+                className="btn btn-ghost btn-square btn-sm"
                 onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}
                 title="Channels"
               >
@@ -122,7 +122,7 @@ export default function App() {
               </button>
             )}
             <button
-              className="btn-icon"
+              className="btn btn-ghost btn-square btn-sm"
               onClick={() => setShowSettings(!showSettings)}
               title="Settings"
             >
@@ -200,7 +200,7 @@ export default function App() {
               >
                 <div className="w-8 h-1 bg-white/20 rounded-full mr-2" />
                 <span className="text-10px">
-                  Channels {mobileDrawerOpen ? '' : `(${channels.length})`}
+                  Channels {mobileDrawerOpen ? '' : `(${String(channels.length)})`}
                 </span>
               </button>
               {mobileDrawerOpen && (
@@ -215,10 +215,10 @@ export default function App() {
         {/* Settings modal */}
         {showSettings && (
           <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowSettings(false)}>
-            <div className="panel p-6 m-4 max-w-sm w-full max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="card bg-base-200/90 backdrop-blur-sm border border-base-content/10 rounded-xl p-6 m-4 max-w-sm w-full max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
               <h3 className="text-white/80 font-medium mb-4">Settings</h3>
               <SettingsPanel />
-              <button className="btn-primary w-full mt-4" onClick={() => setShowSettings(false)}>
+              <button className="btn btn-primary w-full mt-4" onClick={() => setShowSettings(false)}>
                 Close
               </button>
             </div>
@@ -240,7 +240,7 @@ export default function App() {
               <span className="text-white/30 text-sm">Player</span>
             </div>
             <button
-              className="btn-icon"
+              className="btn btn-ghost btn-square btn-sm"
               onClick={() => setShowSidebar(false)}
               title="Hide sidebar"
             >
@@ -258,7 +258,7 @@ export default function App() {
           <div className="flex items-center gap-3">
             {!showSidebar && appMode === 'play' && (
               <button
-                className="btn-icon"
+                className="btn btn-ghost btn-square btn-sm"
                 onClick={() => setShowSidebar(true)}
                 title="Show channels"
               >
@@ -285,7 +285,7 @@ export default function App() {
               </button>
             )}
             <button
-              className="btn-icon"
+              className="btn btn-ghost btn-square btn-sm"
               onClick={() => setShowSettings(!showSettings)}
               title="Settings"
             >
@@ -336,10 +336,10 @@ export default function App() {
       {/* Settings modal */}
       {showSettings && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowSettings(false)}>
-          <div className="panel p-6 m-4 w-96 max-w-full" onClick={e => e.stopPropagation()}>
+          <div className="card bg-base-200/90 backdrop-blur-sm border border-base-content/10 rounded-xl p-6 m-4 w-96 max-w-full" onClick={e => e.stopPropagation()}>
             <h3 className="text-white/80 font-medium mb-4">Settings</h3>
             <SettingsPanel />
-            <button className="btn-primary w-full mt-4" onClick={() => setShowSettings(false)}>
+            <button className="btn btn-primary w-full mt-4" onClick={() => setShowSettings(false)}>
               Close
             </button>
           </div>
@@ -410,7 +410,7 @@ function SettingsPanel() {
         <label className="text-white/65 text-xs block mb-1">Default Grid Mode</label>
         <select
           value={settings.gridMode}
-          onChange={e => useSettingsStore.setState({ gridMode: e.target.value as any })}
+          onChange={e => useSettingsStore.setState({ gridMode: e.target.value as GridMode })}
           className="w-full px-3 py-2 bg-gray-900/90 border border-gray-600/40 rounded-lg text-white/90 text-sm
             focus:outline-none focus:border-blue-500/60"
         >
@@ -426,7 +426,7 @@ function SettingsPanel() {
         <label className="text-white/65 text-xs block mb-1">Buffering Strategy</label>
         <select
           value={settings.buffering}
-          onChange={e => useSettingsStore.setState({ buffering: e.target.value as any })}
+          onChange={e => useSettingsStore.setState({ buffering: e.target.value as PlayerSettings['buffering'] })}
           className="w-full px-3 py-2 bg-gray-900/90 border border-gray-600/40 rounded-lg text-white/90 text-sm
             focus:outline-none focus:border-blue-500/60"
         >
