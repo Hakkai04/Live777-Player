@@ -11,6 +11,10 @@ interface RtspBridgeResponse {
   streamId: string
 }
 
+interface RtspBridgeErrorBody {
+  error?: string
+}
+
 /**
  * Resolve an RTSP URL to a WHEP playback URL via the bridge.
  *
@@ -25,14 +29,14 @@ export async function resolveRtspUrl(rtspUrl: string): Promise<RtspBridgeRespons
 
   if (!resp.ok) {
     const body = await resp.text().catch(() => '')
-    let message = `Bridge returned ${resp.status}`
+    let message = `Bridge returned ${String(resp.status)}`
     try {
-      const err = JSON.parse(body)
+      const err: RtspBridgeErrorBody = JSON.parse(body) as RtspBridgeErrorBody
       if (err.error) message = err.error
     } catch { /* use default */ }
     throw new Error(message)
   }
 
-  const data: RtspBridgeResponse = await resp.json()
+  const data = await resp.json() as RtspBridgeResponse
   return data
 }

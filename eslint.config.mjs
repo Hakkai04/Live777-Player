@@ -65,6 +65,15 @@ export default tseslint.config(
     },
   },
   {
+    // RTSP bridge: fetch/JSON.parse return any by design (runtime network data)
+    files: ['src/lib/rtsp-bridge.ts'],
+    rules: {
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/restrict-template-expressions': 'off',
+    },
+  },
+  {
     // WebRTC getStats() API returns loosely-typed RTCStatsReport by spec
     files: ['src/lib/stats-parser.ts'],
     rules: {
