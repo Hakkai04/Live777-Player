@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import type { StreamProtocol, AppMode, GridMode, PlayerSettings } from '@/types'
 import { useChannelManager } from '@/hooks/useChannelManager'
 import { useSettingsStore, setGridMode } from '@/store/playerStore'
@@ -7,6 +7,7 @@ import { UrlInput } from '@/components/UrlInput'
 import { VideoGrid } from '@/components/VideoGrid'
 import { CameraPublisher } from '@/components/CameraPublisher'
 import { IconSwap, IconSettings, IconBroadcast, IconGrid } from '@/components/svg/icons'
+import { resolveRtspUrl } from '@/lib/rtsp-bridge'
 
 type LayoutMode = 'desktop' | 'mobile'
 
@@ -18,25 +19,54 @@ export default function App() {
   const [connected, setConnected] = useState(false)
   const [appMode, setAppMode] = useState<AppMode>('play')
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
+  const [bridgeLoading, setBridgeLoading] = useState(false)
+  const [bridgeError, setBridgeError] = useState<string | null>(null)
   const { activeChannel, channels } = useChannelManager()
   const gridMode = useSettingsStore(s => s.gridMode)
 
-  // Detect screen size for layout
-  const layoutMode: LayoutMode =
+  // Reactive layout detection (fixes gap: resize/rotate)
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>(
     typeof window !== 'undefined' && window.innerWidth < 768 ? 'mobile' : 'desktop'
+  )
+  useEffect(() => {
+    const onResize = () => {
+      setLayoutMode(window.innerWidth < 768 ? 'mobile' : 'desktop')
+    }
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  // Shared connect logic — resolves RTSP via bridge, then sets WHEP URL
+  const doConnect = useCallback(async (url: string, protocol: StreamProtocol) => {
+    setBridgeError(null)
+    if (protocol === 'rtsp') {
+      setBridgeLoading(true)
+      try {
+        const result = await resolveRtspUrl(url)
+        setStreamUrl(result.whepUrl)
+        setStreamProtocol('whep') // after bridge, it's a WHEP stream
+        setConnected(true)
+      } catch (e) {
+        setBridgeError(e instanceof Error ? e.message : 'RTSP bridge error')
+        setConnected(false)
+      } finally {
+        setBridgeLoading(false)
+      }
+    } else {
+      setStreamUrl(url)
+      setStreamProtocol(protocol)
+      setConnected(true)
+    }
+  }, [])
 
   const handleConnect = useCallback((url: string, protocol: StreamProtocol) => {
-    setStreamUrl(url)
-    setStreamProtocol(protocol)
-    setConnected(true)
-  }, [])
+    void doConnect(url, protocol)
+  }, [doConnect])
 
   const handleSelectChannel = useCallback((url: string, protocol: StreamProtocol) => {
-    setStreamUrl(url)
-    setStreamProtocol(protocol)
-    setConnected(true)
-    setMobileDrawerOpen(false) // auto-close drawer on channel select
-  }, [])
+    void doConnect(url, protocol)
+    setMobileDrawerOpen(false)
+  }, [doConnect])
 
   const handleDisconnect = useCallback(() => {
     setConnected(false)
@@ -141,8 +171,10 @@ export default function App() {
           <div className="flex-1 flex flex-col min-h-0">
             {/* URL Input when not connected */}
             {!connected && (
-              <div className="px-3 py-3">
+              <div className="px-3 py-3 space-y-2">
                 <UrlInput onConnect={handleConnect} />
+                {bridgeLoading && <p className="text-blue-400 text-xs text-center">Connecting via RTSP bridge...</p>}
+                {bridgeError && <p className="text-red-400 text-xs text-center">{bridgeError}</p>}
               </div>
             )}
 
@@ -303,8 +335,10 @@ export default function App() {
           <div className="flex-1 flex flex-col min-h-0">
             {/* URL Input (when not connected) */}
             {!connected && (
-              <div className="px-4 py-6">
+              <div className="px-4 py-6 space-y-2">
                 <UrlInput onConnect={handleConnect} />
+                {bridgeLoading && <p className="text-blue-400 text-xs text-center">Connecting via RTSP bridge...</p>}
+                {bridgeError && <p className="text-red-400 text-xs text-center">{bridgeError}</p>}
               </div>
             )}
 

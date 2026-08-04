@@ -68,6 +68,8 @@ export class WhepClient {
   private _state: PlayerState = 'idle'
   private _error: Error | null = null
   private corrId: string
+  private _firstFrameMs: number | null = null
+  private connectStartTime = 0
 
   // Callbacks
   private onStateChange: ((state: PlayerState) => void) | null = null
@@ -95,6 +97,37 @@ export class WhepClient {
 
   getStream(): MediaStream {
     return this.stream
+  }
+
+  /** First frame time in ms from connect() call, or null if not yet received */
+  get firstFrameMs(): number | null {
+    return this._firstFrameMs
+  }
+
+  /**
+   * Apply buffering strategy by setting playoutDelayHint on the video receiver.
+   * Maps PlayerSettings.buffering values to RTCRtpReceiver.playoutDelayHint:
+   *   'auto'   → browser default (don't set)
+   *   'low'    → 0.1s (aggressive low latency)
+   *   'normal' → 0.5s
+   *   'high'   → 2s (smooth playback)
+   */
+  setBufferingStrategy(strategy: string): void {
+    if (!this.pc || strategy === 'auto') return
+    const delays: Record<string, number> = { low: 0.1, normal: 0.5, high: 2.0 }
+    const delay = delays[strategy]
+    if (delay === undefined) return
+    const receivers = this.pc.getReceivers()
+    for (const r of receivers) {
+      if (r.track.kind === 'video' && 'playoutDelayHint' in r) {
+        try {
+          ;(r as RTCRtpReceiver & { playoutDelayHint?: number }).playoutDelayHint = delay
+          log.info('Applied buffering strategy', { strategy, delaySeconds: delay })
+        } catch {
+          // playoutDelayHint not supported by this browser
+        }
+      }
+    }
   }
 
   setCallbacks(callbacks: {
@@ -134,6 +167,11 @@ export class WhepClient {
 
   private onTrack = (ev: RTCTrackEvent) => {
     const track = ev.track
+    // Record first-frame time on first video track
+    if (track.kind === 'video' && this._firstFrameMs === null && this.connectStartTime > 0) {
+      this._firstFrameMs = Math.round(performance.now() - this.connectStartTime)
+      log.info('First video frame received', { firstFrameMs: this._firstFrameMs, corrId: this.corrId })
+    }
     // Replace existing track of same kind, or add new
     const existing = this.stream.getTracks().find(t => t.kind === track.kind)
     if (existing) {
@@ -150,6 +188,8 @@ export class WhepClient {
     }
 
     this.setState('loading')
+    this.connectStartTime = performance.now()
+    this._firstFrameMs = null
     log.info('Connecting to WHEP stream', { url: this.url, corrId: this.corrId })
     this.pc = new RTCPeerConnection({
       iceServers: [

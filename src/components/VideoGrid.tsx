@@ -74,6 +74,7 @@ export function VideoGrid({ activeStreamUrl, activeProtocol }: VideoGridProps) {
           streamUrl={activeStreamUrl}
           streamType={activeProtocol}
           autoPlay
+          channelId={activeChannelId ?? ''}
         />
       </div>
     )
@@ -98,6 +99,7 @@ export function VideoGrid({ activeStreamUrl, activeProtocol }: VideoGridProps) {
               streamUrl={channel.url}
               streamType={channel.protocol}
               autoPlay={isActive || displayedChannels.length <= 4}
+              channelId={channel.id}
             />
             {/* Channel label */}
             <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm px-2 py-0.5 rounded text-xs text-white/90">

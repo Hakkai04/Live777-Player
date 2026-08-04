@@ -4,6 +4,7 @@ import { useWhepPlayer } from '@/hooks/useWhepPlayer'
 import { useStreamStats } from '@/hooks/useStreamStats'
 import { useFullscreen } from '@/hooks/useFullscreen'
 import { useSettingsStore } from '@/store/playerStore'
+import { useChannelManager } from '@/hooks/useChannelManager'
 import { PlayerControls } from './PlayerControls'
 import { StreamStats } from './StreamStats'
 import { IconLoading, IconError } from './svg/icons'
@@ -12,11 +13,14 @@ interface LivePlayerProps {
   streamUrl: string | null
   streamType?: StreamProtocol
   autoPlay?: boolean
+  /** Channel ID for online status tracking */
+  channelId?: string
 }
 
 export function LivePlayer({
   streamUrl,
-  autoPlay = true
+  autoPlay = true,
+  channelId
 }: LivePlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -47,6 +51,32 @@ export function LivePlayer({
 
   // Fullscreen
   const fullscreen = useFullscreen(containerRef)
+
+  // Channel online status (fixes gap: online indicator was never updated)
+  const { setOnline } = useChannelManager()
+
+  // Auto-mark channel as online when playing, offline on disconnect
+  useEffect(() => {
+    if (channelId) {
+      setOnline(channelId, state === 'playing')
+    }
+  }, [state, channelId, setOnline])
+
+  // Apply buffering strategy to video receiver playoutDelayHint
+  // Fixes gap: buffering setting was stored but never applied
+  useEffect(() => {
+    if (!pc || settings.buffering === 'auto') return
+    const delays: Record<string, number> = { low: 0.1, normal: 0.5, high: 2.0 }
+    const delay = delays[settings.buffering]
+    if (delay === undefined) return
+    for (const receiver of pc.getReceivers()) {
+      if (receiver.track.kind === 'video' && 'playoutDelayHint' in receiver) {
+        try {
+          ;(receiver as { playoutDelayHint?: number }).playoutDelayHint = delay
+        } catch { /* not supported */ }
+      }
+    }
+  }, [pc, settings.buffering])
 
   // Wire up MediaStream to video element
   useEffect(() => {
