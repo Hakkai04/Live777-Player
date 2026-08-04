@@ -129,9 +129,10 @@ async fn notify_live777(live777_url: &str, rtsp_url: &str, stream_id: &str) {
         .await
     {
         Ok(resp) => {
+            let status = resp.status();
             let body = resp.text().await.unwrap_or_default();
             tracing::info!(
-                status = %resp.status(),
+                status = %status,
                 body = %body,
                 "Live777 pull API response"
             );

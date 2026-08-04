@@ -23,7 +23,10 @@ export default defineConfig({
     },
     {
       name: 'chromium-mobile',
-      use: { ...devices['iPhone 13 Pro'] },
+      use: {
+        ...devices['iPhone 13 Pro'],
+        browserName: 'chromium', // override WebKit → Chromium (CI only installs chromium)
+      },
     },
   ],
   webServer: process.env.CI

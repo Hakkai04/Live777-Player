@@ -89,7 +89,7 @@ test.describe('Channel Management', () => {
     const addBtn = page.getByTitle('Add Channel')
     await addBtn.click()
     await page.getByPlaceholder('WHEP or RTSP URL').fill('test-stream-id')
-    await page.getByRole('button', { name: 'Add' }).click()
+    await page.getByRole('button', { name: 'Add', exact: true }).click()
     await expect(page.getByText('Channel 1')).toBeVisible()
   })
 })

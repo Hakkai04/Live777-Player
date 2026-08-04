@@ -5,7 +5,7 @@ mod state;
 mod types;
 
 use axum::middleware;
-use axum::routing::{delete, get, post};
+use axum::routing::{delete, get};
 use axum::Router;
 use state::AppState;
 use std::net::SocketAddr;
