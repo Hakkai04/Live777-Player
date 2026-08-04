@@ -3,9 +3,17 @@
  *
  * AI Vibe Coding: Each test has a clear name describing the expected behavior.
  * Assertions follow the Arrange-Act-Assert pattern for readability.
+ *
+ * Tests are designed to work across both projects (desktop + mobile).
+ * The `test.skip()` or conditional guards prevent false positives.
  */
 
 import { test, expect } from '@playwright/test'
+
+// Helper: determine if running in desktop or mobile project
+function isMobile(projectName: string): boolean {
+  return projectName.includes('mobile')
+}
 
 // ============ URL Input ============
 
@@ -46,8 +54,6 @@ test.describe('Mode Switch', () => {
     await page.goto('/')
     const publishBtn = page.getByRole('button', { name: 'Publish' })
     await publishBtn.click()
-    // Camera publish UI should appear
-    await expect(page.getByText('Start Publishing')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Start Publishing' })).toBeVisible()
   })
 
@@ -55,35 +61,35 @@ test.describe('Mode Switch', () => {
     await page.goto('/')
     await page.getByRole('button', { name: 'Publish' }).click()
     await page.getByRole('button', { name: 'Play' }).click()
-    // URL input should be visible in Play mode
     await expect(page.getByRole('button', { name: 'Connect' })).toBeVisible()
   })
 })
 
-// ============ Channel Management ============
+// ============ Channel Management (desktop only — sidebar) ============
 
 test.describe('Channel Management', () => {
-  test('add channel form opens when + button clicked', async ({ page }) => {
+  test('add channel form opens when + button clicked', async ({ page }, testInfo) => {
+    // Sidebar is only visible on desktop (>=768px viewport)
+    if (isMobile(testInfo.project.name)) {
+      test.skip()
+    }
     await page.goto('/')
     const addBtn = page.getByTitle('Add Channel')
-    if (await addBtn.isVisible()) {
-      await addBtn.click()
-      await expect(page.getByPlaceholder('Channel name')).toBeVisible()
-      await expect(page.getByPlaceholder('WHEP or RTSP URL')).toBeVisible()
-    }
+    await expect(addBtn).toBeVisible()
+    await addBtn.click()
+    await expect(page.getByPlaceholder('Channel name')).toBeVisible()
+    await expect(page.getByPlaceholder('WHEP or RTSP URL')).toBeVisible()
   })
 
-  test('adds a new channel to the list', async ({ page }) => {
+  test('adds a new channel to the list', async ({ page }, testInfo) => {
+    if (isMobile(testInfo.project.name)) {
+      test.skip()
+    }
     await page.goto('/')
     const addBtn = page.getByTitle('Add Channel')
-    if (!(await addBtn.isVisible())) {
-      // Sidebar might be hidden on mobile — skip
-      return
-    }
     await addBtn.click()
     await page.getByPlaceholder('WHEP or RTSP URL').fill('test-stream-id')
     await page.getByRole('button', { name: 'Add' }).click()
-    // Channel should appear in list
     await expect(page.getByText('Channel 1')).toBeVisible()
   })
 })
@@ -91,20 +97,25 @@ test.describe('Channel Management', () => {
 // ============ Grid Mode ============
 
 test.describe('Grid Mode', () => {
-  test('grid mode buttons are visible', async ({ page }) => {
+  test('grid mode buttons are visible in top bar', async ({ page }, testInfo) => {
     await page.goto('/')
-    // Grid mode buttons: 1, 4, 9, 16
-    await expect(page.getByTitle('1 stream', { exact: false })).toBeVisible()
+    // Grid buttons are always visible in Play mode top bar (desktop & mobile)
+    // Use .first() — desktop has duplicate buttons in sidebar, mobile may not render
+    const btn1 = page.getByTitle('1 stream').first()
+    await expect(btn1).toBeVisible({ timeout: 5000 })
   })
 
-  test('clicking grid button changes active state', async ({ page }) => {
-    await page.goto('/')
-    const btn4 = page.getByTitle('4 streams', { exact: false })
-    if (await btn4.isVisible()) {
-      await btn4.click()
-      // The button should have blue highlight after click
-      await expect(btn4).toHaveClass(/blue/)
+  test('clicking grid button changes active state on desktop', async ({ page }, testInfo) => {
+    if (isMobile(testInfo.project.name)) {
+      test.skip() // grid buttons hidden on mobile until connected
     }
+    await page.goto('/')
+    // Scope to top bar to avoid strict-mode violation (sidebar has duplicate titles)
+    const topBarGrid = page.locator('.flex.items-center.gap-3, .flex.items-center.gap-0\\.5').first()
+    const btn4 = topBarGrid.getByTitle('4 streams')
+    await btn4.click()
+    // Active button gets blue highlight: bg-blue-500/30 or text-blue-300
+    await expect(btn4).toHaveClass(/bg-blue-500\\\/30|text-blue-300/)
   })
 })
 
@@ -113,15 +124,16 @@ test.describe('Grid Mode', () => {
 test.describe('Settings Panel', () => {
   test('settings modal opens on gear icon click', async ({ page }) => {
     await page.goto('/')
-    const settingsBtn = page.getByTitle('Settings')
+    // Multiple settings buttons may exist (mobile + desktop layouts) — use .first()
+    const settingsBtn = page.getByTitle('Settings').first()
     await settingsBtn.click()
-    await expect(page.getByText('Default Volume')).toBeVisible()
+    await expect(page.getByText('Default Volume')).toBeVisible({ timeout: 5000 })
     await expect(page.getByText('Auto Play')).toBeVisible()
   })
 
   test('settings modal closes on Close button', async ({ page }) => {
     await page.goto('/')
-    await page.getByTitle('Settings').click()
+    await page.getByTitle('Settings').first().click()
     await page.getByRole('button', { name: 'Close' }).click()
     await expect(page.getByText('Default Volume')).not.toBeVisible()
   })
@@ -130,23 +142,25 @@ test.describe('Settings Panel', () => {
 // ============ Mobile Layout ============
 
 test.describe('Mobile Layout', () => {
-  test('shows mobile layout at iPhone viewport', async ({ page }) => {
-    // Using the chromium-mobile project handles viewport automatically
+  test('shows mobile layout at iPhone viewport', async ({ page }, testInfo) => {
+    if (!isMobile(testInfo.project.name)) {
+      test.skip()
+    }
     await page.goto('/')
-    // Mobile layout should have the bottom channel drawer handle
-    const drawerHandle = page.getByText('Channels', { exact: false })
+    // Mobile layout shows the bottom channel drawer handle
+    const drawerHandle = page.getByText(/Channels/)
     await expect(drawerHandle).toBeVisible()
   })
 
-  test('channel drawer expands on tap', async ({ page }) => {
-    await page.goto('/')
-    const drawerBtn = page.getByText(/Channels/)
-    if (await drawerBtn.isVisible()) {
-      await drawerBtn.click()
-      // Drawer should expand — form should be visible
-      const addBtn = page.getByTitle('Add Channel')
-      await expect(addBtn).toBeVisible({ timeout: 5000 })
+  test('channel drawer expands on tap', async ({ page }, testInfo) => {
+    if (!isMobile(testInfo.project.name)) {
+      test.skip()
     }
+    await page.goto('/')
+    const drawerBtn = page.getByText(/Channels/).first()
+    await drawerBtn.click()
+    // Drawer expands — the Add Channel button becomes visible
+    await expect(page.getByTitle('Add Channel')).toBeVisible({ timeout: 5000 })
   })
 })
 
@@ -155,8 +169,8 @@ test.describe('Mobile Layout', () => {
 test.describe('Empty State', () => {
   test('shows idle message when no stream is connected', async ({ page }) => {
     await page.goto('/')
-    // Should show the idle/empty state
-    const idleText = page.getByText(/Enter a stream URL/, { exact: false })
-    await expect(idleText.or(page.getByText(/Standalone Player/))).toBeVisible({ timeout: 5000 })
+    // Desktop shows "Standalone Player"; mobile shows "Enter a stream URL"
+    const idleText = page.getByText(/Enter a stream URL|Standalone Player/)
+    await expect(idleText).toBeVisible({ timeout: 5000 })
   })
 })

@@ -26,10 +26,11 @@ export default defineConfig({
       use: { ...devices['iPhone 13 Pro'] },
     },
   ],
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 30000,
-  },
+  webServer: process.env.CI
+    ? undefined  // CI workflow starts its own dev server
+    : {
+        command: 'npm run dev',
+        url: 'http://localhost:3000',
+        timeout: 30000,
+      },
 })

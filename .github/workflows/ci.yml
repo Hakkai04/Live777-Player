@@ -52,9 +52,9 @@ jobs:
         env:
           CI: true
       - name: Wait for server
-        run: npx wait-on tcp:3000 --timeout 30000
+        run: npx wait-on http://localhost:3000 --timeout 30000
       - name: Run Playwright tests
-        run: npx playwright test
+        run: npm run test:e2e
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
@@ -77,7 +77,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             server-rust/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('server-rust/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ hashFiles('server-rust/Cargo.toml') }}
       - run: cargo check --manifest-path server-rust/Cargo.toml
       - run: cargo clippy --manifest-path server-rust/Cargo.toml -- -D warnings
       - run: cargo test --manifest-path server-rust/Cargo.toml

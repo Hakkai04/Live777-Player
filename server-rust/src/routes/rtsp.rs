@@ -106,6 +106,10 @@ pub async fn delete_stream(
 /// This is a best-effort operation — if Live777 doesn't have a pull API,
 /// we log a message about using FFmpeg/GStreamer as a relay instead.
 async fn notify_live777(live777_url: &str, rtsp_url: &str, stream_id: &str) {
+    use std::sync::LazyLock;
+
+    static CLIENT: LazyLock<reqwest::Client> = LazyLock::new(reqwest::Client::new);
+
     tracing::info!(
         rtsp_url = %rtsp_url,
         stream_id = %stream_id,
@@ -118,7 +122,7 @@ async fn notify_live777(live777_url: &str, rtsp_url: &str, stream_id: &str) {
         "streamId": stream_id
     });
 
-    match reqwest::Client::new()
+    match CLIENT
         .post(format!("{}/stream/pull", live777_url))
         .json(&payload)
         .send()

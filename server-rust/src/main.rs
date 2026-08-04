@@ -9,8 +9,8 @@ use axum::routing::{delete, get, post};
 use axum::Router;
 use state::AppState;
 use std::net::SocketAddr;
-use tower_http::cors::{Any, CorsLayer};
-use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
+use tower_http::cors::CorsLayer;
+use tower_http::trace::TraceLayer;
 use tracing::Level;
 
 #[tokio::main]
@@ -25,31 +25,25 @@ async fn main() {
     let listen_port: u16 = std::env::var("BRIDGE_PORT")
         .ok()
         .and_then(|p| p.parse().ok())
-        .unwrap_or(4002); // Different port from Go bridge (4001) during migration
+        .unwrap_or(4002);
 
     // Shared application state
     let state = AppState::new(live777_url.clone());
 
     // CORS — permissive for browser player access
-    // AI Vibe Coding advantage: tower-http's CorsLayer is type-checked at
-    // compile time, unlike the hand-rolled string-based CORS in Go.
-    let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods(Any)
-        .allow_headers(Any);
+    let cors = CorsLayer::permissive();
 
-    // Request tracing middleware — adds trace_id span to every request
+    // Request tracing middleware
     let trace_layer = TraceLayer::new_for_http()
-        .make_span_with(DefaultMakeSpan::new().level(Level::INFO))
-        .on_response(DefaultOnResponse::new().level(Level::INFO));
+        .make_span_with(tower_http::trace::DefaultMakeSpan::new().level(Level::INFO))
+        .on_response(tower_http::trace::DefaultOnResponse::new().level(Level::INFO));
 
-    // Router — all routes are exhaustively checked by axum at compile time
+    // Router
     let app = Router::new()
         // Health check
         .route("/bridge/health", get(routes::health::health_check))
-        // RTSP bridge CRUD
-        .route("/bridge/rtsp", post(routes::rtsp::create_rtsp_bridge))
-        .route("/bridge/rtsp", get(routes::rtsp::list_streams))
+        // RTSP bridge CRUD (method-routing combinator for GET+POST on same path)
+        .route("/bridge/rtsp", get(routes::rtsp::list_streams).post(routes::rtsp::create_rtsp_bridge))
         .route("/bridge/rtsp/{stream_id}", delete(routes::rtsp::delete_stream))
         // Middleware
         .layer(cors)
@@ -75,7 +69,7 @@ async fn main() {
 /// The correlation ID is injected into the tracing span so all log lines
 /// from this request are tagged.
 async fn correlation_middleware(
-    req: axum::http::request::Request<axum::body::Body>,
+    req: axum::extract::Request,
     next: axum::middleware::Next,
 ) -> axum::response::Response {
     use std::sync::atomic::{AtomicU64, Ordering};
