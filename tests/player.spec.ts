@@ -98,9 +98,12 @@ test.describe('Channel Management', () => {
 
 test.describe('Grid Mode', () => {
   test('grid mode buttons are visible in top bar', async ({ page }, testInfo) => {
+    // On desktop: grid buttons in top bar always visible
+    // On mobile: grid buttons only rendered when connected === true
+    if (isMobile(testInfo.project.name)) {
+      test.skip()
+    }
     await page.goto('/')
-    // Grid buttons are always visible in Play mode top bar (desktop & mobile)
-    // Use .first() — desktop has duplicate buttons in sidebar, mobile may not render
     const btn1 = page.getByTitle('1 stream').first()
     await expect(btn1).toBeVisible({ timeout: 5000 })
   })

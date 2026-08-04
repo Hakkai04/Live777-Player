@@ -21,6 +21,7 @@ pub enum AppError {
     Live777Unreachable(#[from] reqwest::Error),
 
     #[error("Internal error: {0}")]
+    #[allow(dead_code)] // reserved for future error paths
     Internal(String),
 }
 
